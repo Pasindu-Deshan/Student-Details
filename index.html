@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-/bQdsTh/da6pkI1MST/rWKFNjaCP5gBSY4sEBT38Q/9RBh9AH40zEOg7Hlq2THRZ" crossorigin="anonymous"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+        
+        <title>Student Details</title>
+
+        <style>
+            body{
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            .container{
+                padding: 2% 4% 0 4%;
+            }
+            .panel{
+                margin: 3px;
+                padding: 3px;
+                border: 2px solid green;
+            }
+            
+        </style>
+
+    </head>
+    <body>
+        <div class="container">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <form class="form-inline">
+                                <div class="form-group mb-2">
+                                    <label for="studentNo" class="col-sm-2 col-form-label">Student No</label>
+                                </div>
+                                <div class="form-group mx-sm-3 mb-2">
+                                <input type="text" class="form-control" id="stNo" placeholder="Student No">
+                                </div>
+                                <button type="button" class="btn btn-primary mb-2" onclick="getData()">Find Student</button>
+                            </form>
+                            <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                  <th scope="col">Student No</th>
+                                  <th scope="col">First Name</th>
+                                  <th scope="col">Last Name</th>
+                                </tr>
+                              </thead>
+                              <tbody id="stList">
+                              </tbody>
+                            </table>
+                        </div>
+                    </div >
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <form class="form-inline" id="form-id">
+                                <div class="form-group-inline mb-2">
+                                    <label for="studentNo" class="col-sm-2 col-form-label">Student No</label>
+                                </div>
+                                <div class="form-group mx-sm-3 mb-2">
+                                <input type="text" class="form-control" id="studentNo" placeholder="Student No" required>
+                                </div>
+
+                                <div class="form-group-inline mb-2">
+                                    <label for="studentFname" class="col-sm-2 col-form-label">First Name</label>
+                                </div>
+                                <div class="form-group mx-sm-3 mb-2">
+                                <input type="text" class="form-control" id="stFirstName" placeholder="First Name" required>
+                                </div>
+
+                                <div class="form-group-inline mb-2">
+                                    <label for="studentLname" class="col-sm-2 col-form-label">Last Name</label>
+                                </div>
+                                <div class="form-group mx-sm-3 mb-2">
+                                <input type="text" class="form-control" id="stLastName" placeholder="Last Name" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary mb-2" onclick="insertData()">Add Student</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+          </div>
+        </div>
+
+        <!--Script-->
+        <script>
+            //Get student details function
+            function getData(){
+                var stNo = document.getElementById('stNo').value;
+                var result = "";
+                console.log(stNo);
+                if(stNo === ''){
+
+                    //Get all student record
+                    $.get('http://localhost:8080/student-server/students',function(details){
+                        for(var i = 0; i < details.length; i++){
+                            result = result + `<tr> <td> ${details[i].studentNo}</td> <td> ${details[i].firstName}</td> <td> ${details[i].lastName}</td> </tr>`;
+                        }
+                        $("tbody").html(result);
+                    });
+                }else{
+                    var type = parseInt(stNo);
+                    if(isNaN(type) || !stNo === ''){
+                        alert("Not A Number");
+                        document.getElementById("stNo").value = "";
+                    }
+                    else{
+                        
+                        //Get student record related to the given student number
+                        $.get('http://localhost:8080/student-server/student?studentNo='+ parseInt(stNo),function(details){
+                            result += `<tr> <td> ${details.studentNo}</td> <td> ${details.firstName}</td> <td> ${details.lastName}</td> </tr>`;
+                
+                        $("tbody").html(result);
+                    }).fail(function(action){
+                        if(action.status == 404){
+                            alert("Student Not Found");
+                            document.getElementById("stNo").value = "";
+                        }
+                    });
+                }
+            }
+        }
+
+        //Data insertion function
+        function insertData(){
+            event.preventDefault();
+
+            var stNumber = document.getElementById("studentNo").value;
+            var stFirstName = document.getElementById("stFirstName").value;
+            var stLastName = document.getElementById("stLastName").value;
+            
+            //Check student number is an integer or not
+            if(isNaN(stNumber)){
+                alert("Insert a valid Number");
+            }else{
+
+                if((stFirstName && stLastName) != ""){
+                    
+                    //Send data to the server using ajax
+                    $.ajax({
+                    url : "http://localhost:8080/student-server/student",
+                    type : "POST",
+                    contentType : 'application/json; charset=utf-8',
+                    data : JSON.stringify({
+                        studentNo : stNumber,
+                        firstName : stFirstName,
+                        lastName : stLastName
+                    })
+                }).done(function(action){
+                    alert("Record Successfully Inserted")
+                    document.getElementById("studentNo").value = "";
+                    document.getElementById("stFirstName").value = "";
+                    document.getElementById("stLastName").value = "";
+                    getData();
+                    
+                    
+                }).fail(function(action){
+                    if( action.status === 400){
+                        alert("Student Number is already exists");
+                        document.getElementById("studentNo").value = "";
+                        document.getElementById("stFirstName").value = "";
+                        document.getElementById("stLastName").value = "";
+                    }
+                })
+
+                }else{
+                    alert("Field can not be empty");
+                }
+            }  
+            
+        }
+
+        </script>
+    </body>
+</html>
